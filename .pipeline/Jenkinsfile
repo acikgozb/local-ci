@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'docker.io/golang:1.22.3'
-            args '-v /home/jenkins/agent/repo:${WORKSPACE}/repo'
+            args '-H unix:///run/user/1001/docker.sock -v /home/jenkins/agent/repo:${WORKSPACE}/repo'
         }
     }
 
@@ -25,7 +25,6 @@ pipeline {
             steps {
                 dir('repo/src') {
                     sh 'go version'
-                    // sh 'go run main.go'
                 }
             }
         }

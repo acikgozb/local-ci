@@ -1,36 +1,48 @@
-FROM docker.io/docker:27-dind
+FROM docker.io/docker:27-dind-rootless
 
 # Install Java and SSH for Jenkins Agent.
 USER root
 RUN apk add openjdk17-jre-headless openssh
 
-# Generate SSH host keys.
-RUN ssh-keygen -A
-# Disable SSH PasswordAuthentication
-RUN sed -i -e 's/#PasswordAuthentication[[:blank:]]yes/PasswordAuthentication no/g' /etc/ssh/sshd_config
-
 # Create a new user 'jenkins' for our Jenkins controller and agent.
 ARG USER="jenkins"
 RUN adduser -h /home/${USER} -s /bin/sh -D ${USER} ${USER}
-# Unlock the user by setting wildcard (aka. hash).
+# Unlock the user by setting wildcard as passwd (aka. hash).
 RUN echo "${USER}:*" | chpasswd
 # Add user 'jenkins' to group 'docker' to enable Docker commands in agent w/o sudo.
 RUN addgroup ${USER} docker
 # Populate subuid and subgid for user 'jenkins'.
-RUN echo "${USER}:165536:65536" >> /etc/subuid; echo "${USER}:165536:65536" >> /etc/subgid
+RUN echo "${USER}:232072:65536" >> /etc/subuid; echo "${USER}:232072:65536" >> /etc/subgid
 
-USER jenkins
+USER ${USER}
 # Create required directories for Jenkins agent
 RUN mkdir -p /home/${USER}/agent/repo
 # Create required .ssh directory with a strict 700 permission.
 RUN mkdir -m 700 /home/${USER}/.ssh
 
+# Configure SSHD to run as non-root.
+ARG USER_SSH_PATH="/home/${USER}/.ssh"
+# Create host keys for each type.
+RUN ssh-keygen -t rsa -N '' -C '' -f ${USER_SSH_PATH}/id_host_key_rsa -q
+RUN ssh-keygen -t dsa -N '' -C '' -f ${USER_SSH_PATH}/id_host_key_dsa -q
+RUN ssh-keygen -t ed25519 -N '' -C '' -f ${USER_SSH_PATH}/id_host_key_ed25519 -q
+# Create a new sshd_config for our $USER. We won't use /etc/ssh/sshd_config.
+RUN cat <<EOF > ${USER_SSH_PATH}/sshd_config
+PORT 2222
+HostKey ${USER_SSH_PATH}/id_host_key_rsa
+HostKey ${USER_SSH_PATH}/id_host_key_dsa
+HostKey ${USER_SSH_PATH}/id_host_key_ed25519
+PasswordAuthentication no
+AuthorizedKeysFile ${USER_SSH_PATH}/authorized_keys
+PidFile ${USER_SSH_PATH}/sshd.pid
+Subsystem sftp internal-sftp
+EOF
+
 # Copy the public key to .ssh/authorized_keys, to allow our Jenkins controller to connect via SSH.
-# PS: The private key is saved to the Controller as a credential.
+# PS: The private key is saved to the controller as a credential.
 COPY --chown=${USER}:${USER} .pipeline/local/jenkins-agent/jenkins-agent.pub /home/${USER}/.ssh/authorized_keys
 
 COPY --chown=${USER}:${USER} .pipeline/local/jenkins-agent/agent-entrypoint /home/${USER}
 
-USER root
-EXPOSE 22
+EXPOSE 2222
 ENTRYPOINT [ "/home/jenkins/agent-entrypoint" ]

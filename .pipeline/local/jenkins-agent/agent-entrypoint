@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 
 # Run SSHD along with dind entrypoint (dind path can be seen from inspecing the image)
-/usr/sbin/sshd -D -e & dockerd-entrypoint.sh
+/usr/sbin/sshd -D -e -f /home/jenkins/.ssh/sshd_config & dockerd-entrypoint.sh

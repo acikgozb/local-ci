@@ -1,8 +1,10 @@
+env.DOCKER_HOST="unix:///run/user/1001/docker.sock"
+
 pipeline {
     agent {
         docker {
             image 'docker.io/golang:1.22.3'
-            args '-H unix:///run/user/1001/docker.sock -v /home/jenkins/agent/repo:${WORKSPACE}/repo'
+            args '-v /home/jenkins/agent/repo:${WORKSPACE}/repo'
         }
     }
 

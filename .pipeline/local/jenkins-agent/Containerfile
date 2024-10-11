@@ -9,10 +9,14 @@ ARG USER="jenkins"
 RUN adduser -h /home/${USER} -s /bin/sh -D ${USER} ${USER}
 # Unlock the user by setting wildcard as passwd (aka. hash).
 RUN echo "${USER}:*" | chpasswd
-# Add user 'jenkins' to group 'docker' to enable Docker commands in agent w/o sudo.
-RUN addgroup ${USER} docker
 # Populate subuid and subgid for user 'jenkins'.
 RUN echo "${USER}:232072:65536" >> /etc/subuid; echo "${USER}:232072:65536" >> /etc/subgid
+
+# Docker configuration.
+# Set DOCKER_HOST to rootless Docker daemon.
+ENV DOCKER_HOST="unix://run/user/1001/docker.sock"
+# Add user 'jenkins' to group 'docker' to enable Docker commands in agent w/o sudo.
+RUN addgroup ${USER} docker
 
 USER ${USER}
 # Create required directories for Jenkins agent

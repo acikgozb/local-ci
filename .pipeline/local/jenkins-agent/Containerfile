@@ -1,52 +1,39 @@
-FROM docker.io/docker:27-dind-rootless
+FROM quay.io/podman/stable
 
-# Install Java and SSH for Jenkins Agent.
-USER root
-RUN apk add openjdk17-jre-headless openssh
+ARG AGENT_USER="jenkins"
+ARG AGENT_SSH_PUB_KEY_PATH=""
+ARG AGENT_SSHD_PATH=/home/${AGENT_USER}/.ssh
 
-# Create a new user 'jenkins' for our Jenkins controller and agent.
-ARG USER="jenkins"
-RUN adduser -h /home/${USER} -s /bin/sh -D ${USER} ${USER}
+# Install Java and OpenSSH for our Jenkins agent.
+RUN dnf install openssh-server java-17-openjdk-headless -y --quiet
+
+# Create user 'jenkins', which will be used by our controller.
+# UID 1000 is used by the user 'podman'.
+RUN useradd -u 1001 --user-group --create-home ${AGENT_USER}
 # Unlock the user by setting wildcard as passwd (aka. hash).
-RUN echo "${USER}:*" | chpasswd
-# Populate subuid and subgid for user 'jenkins'.
-RUN echo "${USER}:232072:65536" >> /etc/subuid; echo "${USER}:232072:65536" >> /etc/subgid
+RUN echo "${AGENT_USER}:*" | chpasswd
 
-# Docker configuration.
-# Set DOCKER_HOST to rootless Docker daemon.
-ENV DOCKER_HOST="unix://run/user/1001/docker.sock"
-# Add user 'jenkins' to group 'docker' to enable Docker commands in agent w/o sudo.
-RUN addgroup ${USER} docker
+USER ${AGENT_USER}
+# Create necessary directories for our user 'jenkins', which will be used by our controller.
+RUN mkdir /home/${AGENT_USER}/agent /home/${AGENT_USER}/.ssh
 
-USER ${USER}
-# Create required directories for Jenkins agent
-RUN mkdir -p /home/${USER}/agent/repo
-# Create required .ssh directory with a strict 700 permission.
-RUN mkdir -m 700 /home/${USER}/.ssh
-
-# Configure SSHD to run as non-root.
-ARG USER_SSH_PATH="/home/${USER}/.ssh"
-# Create host keys for each type.
-RUN ssh-keygen -t rsa -N '' -C '' -f ${USER_SSH_PATH}/id_host_key_rsa -q
-RUN ssh-keygen -t dsa -N '' -C '' -f ${USER_SSH_PATH}/id_host_key_dsa -q
-RUN ssh-keygen -t ed25519 -N '' -C '' -f ${USER_SSH_PATH}/id_host_key_ed25519 -q
-# Create a new sshd_config for our $USER. We won't use /etc/ssh/sshd_config.
-RUN cat <<EOF > ${USER_SSH_PATH}/sshd_config
-PORT 2222
-HostKey ${USER_SSH_PATH}/id_host_key_rsa
-HostKey ${USER_SSH_PATH}/id_host_key_dsa
-HostKey ${USER_SSH_PATH}/id_host_key_ed25519
+# Configure SSHD.
+# 1 - Send the public key under /home/jenkins/.ssh/authorized_keys to recognize our controller as a verified SSH client. (private key is registered on controller)
+COPY --chown=${AGENT_USER}:${AGENT_USER} ${AGENT_SSH_PUB_KEY_PATH} ${AGENT_SSHD_PATH}/authorized_keys
+# 2 - Create SSHD host keys.
+RUN ssh-keygen -t rsa -N '' -C '' -f ${AGENT_SSHD_PATH}/id_rsa -q; ssh-keygen -t dsa -N '' -C '' -f ${AGENT_SSHD_PATH}/id_dsa -q; ssh-keygen -t ed25519 -N '' -C '' -f ${AGENT_SSHD_PATH}/id_ed25519 -q
+# 3 - Create sshd_config under SSHD_CONFIG_PATH.
+RUN cat <<EOF > ${AGENT_SSHD_PATH}/sshd_config
+Port 2222
+HostKey ${AGENT_SSHD_PATH}/id_rsa
+HostKey ${AGENT_SSHD_PATH}/id_dsa
+HostKey ${AGENT_SSHD_PATH}/id_ed25519
+PidFile ${AGENT_SSHD_PATH}/sshd.pid
 PasswordAuthentication no
-AuthorizedKeysFile ${USER_SSH_PATH}/authorized_keys
-PidFile ${USER_SSH_PATH}/sshd.pid
+PermitRootLogin no
 Subsystem sftp internal-sftp
 EOF
 
-# Copy the public key to .ssh/authorized_keys, to allow our Jenkins controller to connect via SSH.
-# PS: The private key is saved to the controller as a credential.
-COPY --chown=${USER}:${USER} .pipeline/local/jenkins-agent/jenkins-agent.pub /home/${USER}/.ssh/authorized_keys
-
-COPY --chown=${USER}:${USER} .pipeline/local/jenkins-agent/agent-entrypoint /home/${USER}
-
 EXPOSE 2222
-ENTRYPOINT [ "/home/jenkins/agent-entrypoint" ]
+# ${HOME} is used to keep variables as build only args.
+ENTRYPOINT [ "sh", "-c", "/usr/sbin/sshd -D -e -f ${HOME}/.ssh/sshd_config" ]

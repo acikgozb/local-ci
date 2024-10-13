@@ -1,11 +1,6 @@
-env.DOCKER_HOST="unix:///run/user/1001/docker.sock"
-
 pipeline {
     agent {
-        docker {
-            image 'docker.io/golang:1.22.3'
-            args '-v /home/jenkins/agent/repo:${WORKSPACE}/repo'
-        }
+        label "default"
     }
 
     options {
@@ -16,18 +11,30 @@ pipeline {
         pollSCM('')
     }
 
+    environment {
+        TIMEOUT="sleep 900"
+        BUILD_IMAGE="docker.io/library/golang:1.22.3"
+        EXEC="podman exec -it ${BUILD_TAG}"
+    }
+
     stages {
         stage('Checkout') {
             steps {
+                sh 'cp /home/jenkins/agent/repo ${WORKSPACE}/repo'
                 sh 'if [ ! -d ${WORKSPACE}/repo ]; then exit 1; else echo "Checkout successful."; fi'
             }
         }
 
-        stage('CI') {
+        stage('Start build container') {
             steps {
-                dir('repo/src') {
-                    sh 'go version'
-                }
+                sh 'podman run --name ${BUILD_TAG} -w ${WORKSPACE}/repo -v ${WORKSPACE}/repo:${WORKSPACE}/repo $BUILD_IMAGE $TIMEOUT &'
+                sh 'if [ -n $(podman ps --filter "status=exited" --filter "status=unknown" | wc -l) ]; then exit 1; else echo "Container ${BUILD_TAG} is started successfully."; fi'
+            }
+        }
+
+        stage('Run unit tests') {
+            steps {
+                sh '$EXEC go test'
             }
         }
     }

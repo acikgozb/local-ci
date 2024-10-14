@@ -14,7 +14,8 @@ pipeline {
     environment {
         TIMEOUT="sleep 900"
         BUILD_IMAGE="docker.io/library/golang:1.22.3"
-        CONTAINER_NAME="${BUILD_TAG}".replaceAll("/", "-")
+        CONTAINER_NAME="${WORKSPACE.split("/")[-1]}-${BUILD_NUMBER}"
+
         EXEC="podman exec -it ${CONTAINER_NAME}"
     }
 
@@ -27,27 +28,40 @@ pipeline {
             }
         }
 
+        stage('Dump environment variables') {
+            steps {
+                sh 'set +x; echo Dumping environment variables...; set -x'
+                sh '''
+                set +x; for i in {WORKSPACE,BUILD_TAG,BUILD_NUMBER,BUILD_ID,BUILD_URL,NODE_NAME,JOB_NAME,JENKINS_URL,GIT_COMMIT,GIT_BRANCH}; do \
+                    printf "%s:\t%s\n" \$i \${!i}; \
+                done | column -t; set -x
+                '''
+            }
+        }
+
         stage('Checkout') {
             steps {
-                sh 'echo Starting checkout...'
+                sh 'set +x; echo Starting checkout...; set -x'
                 sh 'cp -r /home/jenkins/agent/repo ${WORKSPACE}/repo'
-                sh 'if [ ! -d ${WORKSPACE}/repo ]; then exit 1; else echo "Checkout is successful."; fi'
+                sh 'if [ ! -d ${WORKSPACE}/repo ]; then exit 1; fi'
+                sh 'set +x; echo Checkout is successful.; set -x'
             }
         }
 
         stage('Start build container') {
             steps {
-                sh 'echo Starting the build container ${CONTAINER_NAME} with the image ${BUILD_IMAGE}...'
+                sh 'set +x; echo Starting the build container ${CONTAINER_NAME} with the image ${BUILD_IMAGE}...; set -x'
                 sh 'podman run -d --name ${CONTAINER_NAME} -w /ci -v ${WORKSPACE}/repo:/ci $BUILD_IMAGE $TIMEOUT'
-                sh 'if [ $(podman ps --filter "status=exited" --filter "status=unknown" --noheading | wc -l) -ne 0 ]; then exit 1; else echo "Container ${CONTAINER_NAME} is started successfully."; fi'
+                sh 'if [ $(podman ps --filter "status=exited" --filter "status=unknown" --noheading | wc -l) -ne 0 ]; then exit 1; fi'
+                sh 'set +x; echo The build container ${CONTAINER_NAME} is started successfully.; set -x'
             }
         }
 
         stage('Run unit tests') {
             steps {
-                sh 'echo Starting running unit tests...'
+                sh 'set +x; echo Starting running unit tests...; set -x'
                 sh '$EXEC go test'
-                sh 'echo Unit tests are passed successfully.'
+                sh 'set +x; echo Unit tests are passed successfully.; set -x'
             }
         }
     }

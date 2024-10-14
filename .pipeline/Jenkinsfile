@@ -14,7 +14,8 @@ pipeline {
     environment {
         TIMEOUT="sleep 900"
         BUILD_IMAGE="docker.io/library/golang:1.22.3"
-        EXEC="podman exec -it ${BUILD_TAG}"
+        CONTAINER_NAME="${BUILD_TAG}".replaceAll("/", "-")
+        EXEC="podman exec -it ${CONTAINER_NAME}"
     }
 
     stages {
@@ -36,17 +37,17 @@ pipeline {
 
         stage('Start build container') {
             steps {
-                sh 'echo Starting the build container ${BUILD_TAG} with the image ${BUILD_IMAGE}...'
-                sh 'podman run -d --name ${BUILD_TAG} -w /ci -v ${WORKSPACE}/repo:/ci $BUILD_IMAGE $TIMEOUT'
-                sh 'if [ -n $(podman ps --filter "status=exited" --filter "status=unknown" --noheading | wc -l) ]; then exit 1; else echo "Container ${BUILD_TAG} is started successfully."; fi'
+                sh 'echo Starting the build container ${CONTAINER_NAME} with the image ${BUILD_IMAGE}...'
+                sh 'podman run -d --name ${CONTAINER_NAME} -w /ci -v ${WORKSPACE}/repo:/ci $BUILD_IMAGE $TIMEOUT'
+                sh 'if [ $(podman ps --filter "status=exited" --filter "status=unknown" --noheading | wc -l) -ne 0 ]; then exit 1; else echo "Container ${CONTAINER_NAME} is started successfully."; fi'
             }
         }
 
         stage('Run unit tests') {
             steps {
-                sh 'Starting running unit tests...'
+                sh 'echo Starting running unit tests...'
                 sh '$EXEC go test'
-                sh 'Unit tests are passed successfully.'
+                sh 'echo Unit tests are passed successfully.'
             }
         }
     }

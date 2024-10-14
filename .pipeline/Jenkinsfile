@@ -18,15 +18,25 @@ pipeline {
     }
 
     stages {
+        stage('Clean workspace') {
+            steps {
+                sh 'echo Cleaning previous build artifacts...'
+                sh 'rm -rf ${WORKSPACE}/repo' 
+                sh 'echo The workspace is cleaned up successfully.'
+            }
+        }
+
         stage('Checkout') {
             steps {
+                sh 'echo Starting checkout...'
                 sh 'cp -r /home/jenkins/agent/repo ${WORKSPACE}/repo'
-                sh 'if [ ! -d ${WORKSPACE}/repo ]; then exit 1; else echo "Checkout successful."; fi'
+                sh 'if [ ! -d ${WORKSPACE}/repo ]; then exit 1; else echo "Checkout is successful."; fi'
             }
         }
 
         stage('Start build container') {
             steps {
+                sh 'echo Starting the build container ${BUILD_TAG} with the image ${BUILD_IMAGE}...'
                 sh 'podman run -d --name ${BUILD_TAG} -w /ci -v ${WORKSPACE}/repo:/ci $BUILD_IMAGE $TIMEOUT'
                 sh 'if [ -n $(podman ps --filter "status=exited" --filter "status=unknown" --noheading | wc -l) ]; then exit 1; else echo "Container ${BUILD_TAG} is started successfully."; fi'
             }
@@ -34,7 +44,9 @@ pipeline {
 
         stage('Run unit tests') {
             steps {
+                sh 'Starting running unit tests...'
                 sh '$EXEC go test'
+                sh 'Unit tests are passed successfully.'
             }
         }
     }

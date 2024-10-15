@@ -21,11 +21,11 @@ pipeline {
     stages {
         stage('Clean workspace') {
             steps {
-                print('Cleaning previous build artifacts...')
+                print("Cleaning previous build artifacts...")
                 sh 'rm -rf ${WORKSPACE}/repo' 
-                print('Removing previously failed build containers...')
+                print("Removing previously failed build containers...")
                 sh 'podman stop --all | xargs podman rm'
-                print('The workspace is cleaned up successfully.')
+                print("The workspace is cleaned up successfully.")
             }
         }
 
@@ -92,5 +92,5 @@ pipeline {
 }
 
 def print(String cmd) {
-    sh "set +x; echo "${cmd}"; set -x"
+    sh "set +x; echo ${cmd}; set -x"
 }

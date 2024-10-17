@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# The token is retrieved from http://127.0.0.1:8080/manage/configureSecurity
+# If somehow the token is lost, you can revoke and get another token from UI, and use it in here instead.
+curl "http://127.0.0.1:8080/git/notifyCommit?url=file:///var/jenkins_home/repo&token=6f210b0fc3d9be59865eff9c0731d4ea"
+

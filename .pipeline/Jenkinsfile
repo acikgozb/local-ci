@@ -24,7 +24,7 @@ pipeline {
                 print("Cleaning previous build artifacts...")
                 sh 'rm -rf ${WORKSPACE}/repo' 
                 print("Removing previously failed build containers...")
-                sh 'podman stop --all | xargs podman rm'
+                sh 'if [ $(podman ps -a --noheading | wc -l) -ne 0 ]; then podman stop --all | xargs podman rm; fi'
                 print("The workspace is cleaned up successfully.")
             }
         }
@@ -78,11 +78,13 @@ pipeline {
     
     post {
         always {
-            print("Stopping build container ${CONTAINER_NAME}")
+            print("Stopping build container ${CONTAINER_NAME}.")
+            sh 'podman stop ${CONTAINER_NAME}'
         }
 
         success {
-            print("Removing build container ${CONTAINER_NAME}")
+            print("The pipeline is finished successfully. Removing build container ${CONTAINER_NAME}.")
+            sh 'podman rm ${CONTAINER_NAME}'
         }
 
         failure {

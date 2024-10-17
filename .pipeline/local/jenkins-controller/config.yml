@@ -1,0 +1,9 @@
+jenkins:
+  # Users (stored locally on controller's DB)
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "localadmin"
+          password: "localadmin"
+  authorizationStrategy: loggedInUsersCanDoAnything

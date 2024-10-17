@@ -1,0 +1,16 @@
+FROM docker.io/jenkins/jenkins:lts-jdk17
+
+# Install Configuration as Code plugin for our controller.
+COPY ./.pipeline/local/jenkins-controller/plugins.txt /usr/share/jenkins/ref/plugins.txt
+RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
+
+# Create the base config folder that Jenkins will use.
+RUN mkdir /var/jenkins_home/config
+
+# Set the CASC_JENKINS_CONFIG env variable to set the config folder.
+ENV CASC_JENKINS_CONFIG="/var/jenkins_home/config"
+# Disable the initial controller setup wizard since everything will be configured through our YAML.
+ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
+
+# Copy our controller config into the container.
+COPY --chown=jenkins:jenkins ./.pipeline/local/jenkins-controller/config.yml /var/jenkins_home/config/config.yml

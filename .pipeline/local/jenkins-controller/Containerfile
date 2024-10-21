@@ -1,16 +1,23 @@
-FROM docker.io/jenkins/jenkins:lts-jdk17
+FROM docker.io/jenkins/jenkins:2.479-jdk17
 
-# Install Configuration as Code plugin for our controller.
-COPY ./.pipeline/local/jenkins-controller/plugins.txt /usr/share/jenkins/ref/plugins.txt
-RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
+# Set the CASC_JENKINS_CONFIG env variable to set the config folder.
+ENV CASC_JENKINS_CONFIG="/var/jenkins_home/config"
+# Set the AGENT_PRIVATE_SSH_KEY_PATH env variable to allow our config to read the private SSH key for controller-agent communication.
+ENV AGENT_PRIVATE_SSH_KEY_PATH="/var/jenkins_home/config/agent-ssh-key"
+# Disable the initial controller setup wizard since everything will be configured through our YAML.
+ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
+
+# Define the default build argument for our private SSH key. 
+ARG HOST_PRIVATE_SSH_KEY_PATH="./.pipeline/local/jenkins-controller/agent-ssh-key"
 
 # Create the base config folder that Jenkins will use.
 RUN mkdir /var/jenkins_home/config
 
-# Set the CASC_JENKINS_CONFIG env variable to set the config folder.
-ENV CASC_JENKINS_CONFIG="/var/jenkins_home/config"
-# Disable the initial controller setup wizard since everything will be configured through our YAML.
-ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
+# Install Configuration as Code plugin for our controller to configure the controller.
+COPY ./.pipeline/local/jenkins-controller/plugins.txt /usr/share/jenkins/ref/plugins.txt
+RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
 
 # Copy our controller config into the container.
-COPY --chown=jenkins:jenkins ./.pipeline/local/jenkins-controller/config.yml /var/jenkins_home/config/config.yml
+COPY --chown=jenkins:jenkins ["./.pipeline/local/jenkins-controller/config.yml", "./.pipeline/local/jenkins-controller/local-multibranch.groovy", "/var/jenkins_home/config/"]
+# Copy the private key into the container.
+COPY --chown=jenkins:jenkins ${HOST_PRIVATE_SSH_KEY_PATH} ${AGENT_PRIVATE_SSH_KEY_PATH}

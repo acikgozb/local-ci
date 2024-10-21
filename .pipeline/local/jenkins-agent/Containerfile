@@ -1,7 +1,7 @@
 FROM quay.io/podman/stable
 
 ARG AGENT_USER="jenkins"
-ARG AGENT_SSH_PUB_KEY_PATH=""
+ARG AGENT_SSH_PUB_KEY_PATH="./.pipeline/local/jenkins-agent/agent-ssh-key.pub"
 ARG AGENT_SSHD_PATH=/home/${AGENT_USER}/.ssh
 
 # Install Java and OpenSSH for our Jenkins agent.

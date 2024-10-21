@@ -1,0 +1,39 @@
+FROM quay.io/podman/stable
+
+ARG AGENT_USER="jenkins"
+ARG AGENT_SSH_PUB_KEY_PATH="./.pipeline/local/jenkins-agent/agent-ssh-key.pub"
+ARG AGENT_SSHD_PATH=/home/${AGENT_USER}/.ssh
+
+# Install Java and OpenSSH for our Jenkins agent.
+RUN dnf install openssh-server java-17-openjdk-headless -y --quiet
+
+# Create user 'jenkins', which will be used by our controller.
+# UID 1000 is used by the user 'podman'.
+RUN useradd -u 1001 --user-group --create-home ${AGENT_USER}
+# Unlock the user by setting wildcard as passwd (aka. hash).
+RUN echo "${AGENT_USER}:*" | chpasswd
+
+USER ${AGENT_USER}
+# Create necessary directories for our user 'jenkins', which will be used by our controller.
+RUN mkdir /home/${AGENT_USER}/agent /home/${AGENT_USER}/.ssh
+
+# Configure SSHD.
+# 1 - Send the public key under /home/jenkins/.ssh/authorized_keys to recognize our controller as a verified SSH client. (private key is registered on controller)
+COPY --chown=${AGENT_USER}:${AGENT_USER} ${AGENT_SSH_PUB_KEY_PATH} ${AGENT_SSHD_PATH}/authorized_keys
+# 2 - Create SSHD host keys.
+RUN ssh-keygen -t rsa -N '' -C '' -f ${AGENT_SSHD_PATH}/id_rsa -q; ssh-keygen -t dsa -N '' -C '' -f ${AGENT_SSHD_PATH}/id_dsa -q; ssh-keygen -t ed25519 -N '' -C '' -f ${AGENT_SSHD_PATH}/id_ed25519 -q
+# 3 - Create sshd_config under SSHD_CONFIG_PATH.
+RUN cat <<EOF > ${AGENT_SSHD_PATH}/sshd_config
+Port 2222
+HostKey ${AGENT_SSHD_PATH}/id_rsa
+HostKey ${AGENT_SSHD_PATH}/id_dsa
+HostKey ${AGENT_SSHD_PATH}/id_ed25519
+PidFile ${AGENT_SSHD_PATH}/sshd.pid
+PasswordAuthentication no
+PermitRootLogin no
+Subsystem sftp internal-sftp
+EOF
+
+EXPOSE 2222
+# ${HOME} is used to keep variables as build only args.
+ENTRYPOINT [ "sh", "-c", "/usr/sbin/sshd -D -e -f ${HOME}/.ssh/sshd_config" ]

@@ -1,0 +1,72 @@
+# Jenkins main controller configuration.
+jenkins:
+  systemMessage: "Jenkins is configured automatically via Configuration as Code plugin. If you decide to change any setting via UI, please know that the changes won't take any effect upon a restart."
+  mode: EXCLUSIVE
+  numExecutors: 0 # Disable the executor on controller to delegate jobs to our agent.
+  securityRealm: # Users (stored locally on controller's DB)
+    local:
+      allowsSignup: false
+      enableCaptcha: false
+      users:
+        - id: "admin"
+          password: "admin"
+  authorizationStrategy: loggedInUsersCanDoAnything
+  nodes: # The permanent node we add for our Agent.
+    - permanent:
+        name: "jenkins-agent"
+        nodeDescription: "The default agent (container name: jenkins-agent)"
+        labelString: "default podman" # These labels can be selected from Jenkinsfile.
+        remoteFS: "/home/jenkins/agent" # The recommended FS for our agent. Controller copies the workspace under this directory.
+        mode: EXCLUSIVE # Only use the agent if one of its labels is selected in Jenkinsfile.
+        numExecutors: 1
+        launcher: # Launch agent via SSH.
+          ssh:
+            credentialsId: "jenkins" # The private SSH key for our controller. is stored in this credential.
+            host: "10.89.0.3" # The IP we assign to our agent in Podman network "ci".
+            maxNumRetries: 1 # Retry only once if the SSH connection fails.
+            port: 2222 # Agent SSH port.
+            retryWaitTime: 1 # Wait 1 sec in between retries.
+            sshHostKeyVerificationStrategy:
+              manuallyTrustedKeyVerificationStrategy:
+                requireInitialManualTrust: false
+        retentionStrategy:
+          demand:
+            idleDelay: 15 # Wait 15 minutes before disconnecting from the agent.
+            inDemandDelay: 0 # Do not wait if there is a job in the queue.
+
+# Multibranch pipeline configuration for the project. Jobs have to be defined via Groovy syntax.
+jobs:
+  - file: "/var/jenkins_home/config/local-multibranch.groovy"
+
+# Basic theme configuration.
+appearance:
+  themeManager:
+    disableUserThemes: true
+    theme: "darkSystem" # By default, use dark theme.
+
+# Credential configuration.
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - basicSSHUserPrivateKey:
+              id: "jenkins"
+              description: "jenkins-agent SSH private key."
+              username: "jenkins"
+              scope: GLOBAL
+              privateKeySource:
+                directEntry:
+                  privateKey: "${readFile:${AGENT_PRIVATE_SSH_KEY_PATH}}" # This env is defined in our controller's Containerfile.
+
+# Tool specific configuration.
+tool:
+  git:
+    installations:
+      - home: "git"
+        name: "Default"
+
+# Any other configuration goes under here, which contains 3rd party plugins or even different parts of the controller itself.
+unclassified:
+  location:
+    url: "127.0.0.1:8080"
+    adminAddress: "admin@local.com"

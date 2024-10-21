@@ -1,0 +1,98 @@
+pipeline {
+    agent {
+        label "default"
+    }
+
+    options {
+        skipDefaultCheckout()
+    }
+
+    triggers {
+        pollSCM('')
+    }
+
+    environment {
+        TIMEOUT="sleep 900"
+        IMAGE="docker.io/golangci/golangci-lint:v1.59.1"
+        CONTAINER_NAME="${WORKSPACE.split("/")[-1]}-${BUILD_NUMBER}"
+        EXEC="podman exec -it ${CONTAINER_NAME}"
+    }
+
+    stages {
+        stage('Clean workspace') {
+            steps {
+                print("Cleaning previous build artifacts...")
+                sh 'rm -rf ${WORKSPACE}/repo' 
+                print("Removing previously failed build containers...")
+                sh 'if [ $(podman ps -a --noheading | wc -l) -ne 0 ]; then podman stop --all | xargs podman rm; fi'
+                print("The workspace is cleaned up successfully.")
+            }
+        }
+
+        stage('Dump environment variables') {
+            steps {
+                print("Dumping environment variables...")
+                sh '''
+                set +x; for i in {WORKSPACE,BUILD_TAG,BUILD_NUMBER,BUILD_ID,BUILD_URL,NODE_NAME,JOB_NAME,JENKINS_URL,GIT_COMMIT,GIT_BRANCH}; do \
+                    printf "%s:\t%s\n" \$i \${!i}; \
+                done | column -t; set -x
+                '''
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                print("Starting checkout...")
+                sh 'cp -r /home/jenkins/agent/repo ${WORKSPACE}/repo'
+                sh 'if [ ! -d ${WORKSPACE}/repo ]; then exit 1; fi'
+                print("Checkout is successful.")
+            }
+        }
+
+        stage('Start build container') {
+            steps {
+                print("Starting the build container ${CONTAINER_NAME} with the image ${IMAGE}...")
+                sh 'podman run -d --name ${CONTAINER_NAME} -w /ci -v ${WORKSPACE}/repo:/ci $IMAGE $TIMEOUT'
+                sh 'if [ $(podman ps --filter "status=exited" --filter "status=unknown" --noheading | wc -l) -ne 0 ]; then exit 1; fi'
+                print("The build container ${CONTAINER_NAME} is started successfully.")
+            }
+        }
+
+        stage('Run lint rules') {
+            steps {
+                print("Checking lint rules...")
+                sh '$EXEC make lint'
+                print("Lint rules are passed successfully.")
+            }
+        }
+
+        stage('Run unit tests') {
+            steps {
+                print("Running unit tests...")
+                sh '$EXEC make unit-tests'
+                print("Unit tests are passed successfully.")
+            }
+        }
+
+    }
+    
+    post {
+        always {
+            print("Stopping build container ${CONTAINER_NAME}.")
+            sh 'podman stop ${CONTAINER_NAME}'
+        }
+
+        success {
+            print("The pipeline is finished successfully. Removing build container ${CONTAINER_NAME}.")
+            sh 'podman rm ${CONTAINER_NAME}'
+        }
+
+        failure {
+            print("The pipeline is failed. To inspect the results, you can exec into the build container ${CONTAINER_NAME}.")
+        }
+    }
+}
+
+def print(String cmd) {
+    sh "set +x; echo ${cmd}; set -x"
+}

@@ -177,7 +177,12 @@ Let's see how to get this project up and running.
 
 ### <a id='starting-the-build-environment'/> Starting the Build Environment
 
-To start the build environment, you can run `make start`.
+To start the build environment, run:
+
+```bash
+make start
+```
+
 Shortly after, you will see 2 containers running successfully (`jenkins-controller` and `jenkins-agent`).
 
 Jenkins UI is served through `127.0.0.1:8080`, so you can login to Jenkins with user and password `admin` and check around.
@@ -217,7 +222,12 @@ So, follow the steps below to setup the trigger.
 In that page, there is a section called "Git plugin notifyCommit access tokens".
 Create a token from there and put it in `post-commit` script.
 
-2 - Run the make target `make build-trigger`.
+2 - Run the make target below:
+
+```bash
+make build-trigger
+```
+
 This is a simple `cp` script that puts the `post-commit` script under `.git/hooks` to be used by Git itself. Nothing special.
 
 And that's it!

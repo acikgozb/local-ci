@@ -55,7 +55,7 @@ Here is a list and a brief explanation of the plugins in `plugins.txt`:
 ## <a id='yaml-configuration' /> YAML Configuration
 
 `config.yml` is the main file that is used to configure Jenkins.
-There are comments added for most of the individual option, but generally it consists of 4 main parts:
+There are comments added for most of the individual option, but generally it consists of 6 main parts:
 
 - System configuration
 - System tool configuration

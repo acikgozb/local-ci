@@ -46,5 +46,5 @@ start:
 .PHONY: rm
 rm:
 	podman network rm --force ci && \
-		podman image rm localhost/jenkins-controller:0.0 localhost/jenkins-agent:0.0
+		podman image rm localhost/jenkins-controller:0.0 localhost/jenkins-agent:0.0 && \
 		rm ./.pipeline/local/jenkins-controller/agent-ssh-key ./.pipeline/local/jenkins-agent/agent-ssh-key.pub

@@ -27,7 +27,7 @@ This README goes into the detail of our `Jenkinsfile`.
 
 The `agent` directive instructs the controller about where the individual step should run. If this directive is used at the beginning of the pipeline, it means that the specified agent will be responsible for executing all of the steps.
 
-The value `default` is used because the agent is configured to run only if there is a matching label expression on the pipeline declaration.
+The value `default` is used because that is the agent's label and the agent is configured to run only if there is a matching label expression on the pipeline declaration.
 
 ## <a id='options' /> `options`
 
@@ -40,6 +40,12 @@ The sole purpose of using a `triggers` directive is to enable version control po
 Polling needs to be enabled in order to trigger builds via local Git commits.
 
 The `notifyCommit` endpoint of Jenkins Git plugin only works if polling is enabled on the pipeline.
+
+---
+
+PS: `pollSCM('')` does not actually poll the repository, it is just there to enable the polling.
+
+---
 
 ## <a id='environment' /> `environment`
 
@@ -64,7 +70,7 @@ This step is added to visualize the environment variables that exist on the agen
 
 ## <a id='checkout' /> Checkout
 
-This step is not actually a real checkout, instead it takes advantage of the bind mount `/home/enkins/agent/repo`.
+This step is not actually a real checkout, instead it takes advantage of the bind mount `/home/jenkins/agent/repo`.
 Since the changes done on a bind mount is synced both ways, this eliminates the need for cloning the actual repository. A simple copy to the target workspace is enough to simulate a checkout.
 
 ---
@@ -96,6 +102,6 @@ There are some simple post actions which does different things depending on the 
 
 ## <a id='utilities' /> Utilities
 
-Besides the steps, there is a utility function which is implemented to remove printing the commands on Console Output.
+Besides the steps, there is a utility function which is implemented to disable printing the commands on Console Output.
 
 This is done by using toggling the shell mode (`set +x` and `set -x`).

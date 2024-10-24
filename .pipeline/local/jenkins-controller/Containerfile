@@ -8,7 +8,7 @@ ENV AGENT_PRIVATE_SSH_KEY_PATH="/var/jenkins_home/config/agent-ssh-key"
 ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
 
 # Define the default build argument for our private SSH key. 
-ARG HOST_PRIVATE_SSH_KEY_PATH="./.pipeline/local/jenkins-controller/agent-ssh-key"
+ARG PRIVATE_SSH_KEY_PATH="./.pipeline/local/jenkins-controller/agent-ssh-key"
 
 # Create the base config folder that Jenkins will use.
 RUN mkdir /var/jenkins_home/config
@@ -20,4 +20,4 @@ RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
 # Copy our controller config into the container.
 COPY --chown=jenkins:jenkins ["./.pipeline/local/jenkins-controller/config.yml", "./.pipeline/local/jenkins-controller/local-multibranch.groovy", "/var/jenkins_home/config/"]
 # Copy the private key into the container.
-COPY --chown=jenkins:jenkins ${HOST_PRIVATE_SSH_KEY_PATH} ${AGENT_PRIVATE_SSH_KEY_PATH}
+COPY --chown=jenkins:jenkins ${PRIVATE_SSH_KEY_PATH} ${AGENT_PRIVATE_SSH_KEY_PATH}

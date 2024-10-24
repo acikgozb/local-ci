@@ -238,8 +238,8 @@ This will wipe out pretty much everything you've done during the installation ex
 Here is a list of README's you can check to learn more about each specific part of this PoC:
 
 - [Service](./src/README.md)
-- [Controller](#to-be-filled)
-- [Agent](#to-be-filled)
+- [Controller](./.pipeline/local/jenkins-controller/README.md)
+- [Agent](./.pipeline/local/jenkins-agent/README.md)
 - [Jenkinsfile](#to-be-filled)
 
 ## <a id='issues'/> Issues

@@ -1,6 +1,6 @@
 # Jenkins Controller Setup
 
-This directory contains all files (except the private SSH key) necessary to run a our desired Jenkins controller.
+This directory contains all necessary files (except the private SSH key) to run our desired Jenkins controller.
 
 ## Table of Contents
 
@@ -10,6 +10,7 @@ This directory contains all files (except the private SSH key) necessary to run 
 - [Controller Plugins](#controller-plugins)
 - [YAML Configuration](#yaml-configuration)
 - [Multibranch Pipeline](#multibranch-pipeline)
+- [SSH Configuration](#ssh-configuration)
 <!--toc:end-->
 
 ## <a id='containerfile' /> Containerfile
@@ -91,3 +92,13 @@ All this script does is to define a Multibranch Pipeline with the options below:
 - Finally, it defines a strategy to keep only one build item of a removed branch, and discard the rest.
 
 In order to understand what can be used in this script, you can go to `/plugin/job-dsl/api-viewer/index.html` to see the whole `job-dsl` documentation.
+
+## <a id='ssh-configuration' /> SSH Configuration
+
+The SSH private key is not here by default because it is expected from users to generate the private key.
+
+When it is generated, the key is used by `config.yml` to store it as a system wide credential in Jenkins.
+
+The credential is used by the controller to launch the agent whenever a build is triggered either manually or via a Git commit.
+
+The public key is used on agent to establish a successful SSH connection so check the agent's README to understand the other half of the equation.

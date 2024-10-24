@@ -36,7 +36,7 @@ However, there are some issues with local testing, which comes up frequently as 
 - Non-reproducable remote configurations, which prevents local testing as a whole and causes developers to try alternative, non-reliable solutions.
 
 So, the goal of this project is to locally test the pipelines we use instead of doing trial and error on a remote pipeline.
-With this approach, we can _test_ the actual pipeline steps before deploying our application and fix any problems before hitting the actual servers.
+With this approach, we can _test_ the actual pipeline steps before deploying our service and fix any problems before hitting the actual servers.
 
 It also provides me a nice playground to work with containers and pipelines, so why not!
 
@@ -44,7 +44,7 @@ It also provides me a nice playground to work with containers and pipelines, so 
 
 When it comes to what to use for this PoC, my choices were quite straightforward:
 
-The application itself is really simple and the type of application (API, lambda, scheduler, etc.) doesn't matter that much. It just needs to have one test and a feature to be tested.
+The service itself is really simple and the type of service (API, lambda, scheduler, etc.) doesn't matter that much. It just needs to have one test and a feature to be tested.
 So for the language, I choose **Golang**:
 
 - It's really fun to play, I don't know why.
@@ -88,7 +88,7 @@ alias docker=podman
 
 Keep in mind that I did not developed with Docker, so I do not guarantee that the above method works seamlessly.
 
-Other than this, if you want to play with the application itself, you need to have [Golang runtime](https://go.dev/dl/) installed on your host as well.
+Other than this, if you want to play with the service itself, you need to have [Golang runtime](https://go.dev/dl/) installed on your host as well.
 
 ## <a id='installation'/> Installation
 
@@ -189,14 +189,14 @@ The configuration is written in a way that triggers an initial build for each pi
 
 Seeing a green icon next to the pipeline means that the controller has successfully connected to the agent via SSH and the `Jenkinsfile` has been executed successfully.
 
-From here on, you can check each multibranch pipeline to see their console output or you can go back to the application and make some changes to trigger the build.
+From here on, you can check each multibranch pipeline to see their console output or you can go back to the service and make some changes to trigger the build.
 
 ### <a id='triggering-a-build'/> Triggering a Build
 
 The next step would be to trigger a build to test our pipeline.
 There are 2 ways of doing it, and you can go with the one that you prefer the most:
 
-- You can trigger a build manually after doing a change in the application.
+- You can trigger a build manually after doing a change in the service.
 - You can notify Jenkins after an event (e.g Git push) and Jenkins can start the build with the latest change.
 
 To trigger a build manually, you can go to the pipeline page from Jenkins UI: `/job/ci-pipeline/`.
@@ -237,7 +237,7 @@ This will wipe out pretty much everything you've done during the installation ex
 
 Here is a list of README's you can check to learn more about each specific part of this PoC:
 
-- [Application](#to-be-filled)
+- [Service](./src/README.md)
 - [Controller](#to-be-filled)
 - [Agent](#to-be-filled)
 - [Jenkinsfile](#to-be-filled)

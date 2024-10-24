@@ -27,7 +27,7 @@ install:
 
 .PHONY: build-trigger
 build-trigger:
-	cp ./.pipeline/local/jenkins-agent/post-commit ./.git/hooks/post-commit
+	chmod ug+x ./.pipeline/local/jenkins-agent/post-commit; cp ./.pipeline/local/jenkins-agent/post-commit ./.git/hooks/post-commit;
 
 .PHONY: start
 start:

@@ -194,10 +194,10 @@ From here on, you can check each multibranch pipeline to see their console outpu
 ### <a id='triggering-a-build'/> Triggering a Build
 
 The next step would be to trigger a build to test our pipeline.
-There are 2 ways of doing it, and you can go with the one that you prefer the most:
+There are 2 ways of doing it in this project, and you can go with the one that you prefer the most:
 
 - You can trigger a build manually after doing a change in the service.
-- You can notify Jenkins after an event (e.g Git push) and Jenkins can start the build with the latest change.
+- You can notify Jenkins after a Git event (e.g commit) and Jenkins can start the build with the latest change.
 
 To trigger a build manually, you can go to the pipeline page from Jenkins UI: `/job/ci-pipeline/`.
 From there, click on the branch you want to run the build, and then press "Build Now".
@@ -215,7 +215,7 @@ So, follow the steps below to setup the trigger.
 
 1 - Login to Jenkins and navigate to `/manage/configureSecurity`.
 In that page, there is a section called "Git plugin notifyCommit access tokens".
-Create a token from there and replace "<insert-your-token-here>" in `post-commit` script with it.
+Create a token from there and put it in `post-commit` script.
 
 2 - Run the make target `make build-trigger`.
 This is a simple `cp` script that puts the `post-commit` script under `.git/hooks` to be used by Git itself. Nothing special.

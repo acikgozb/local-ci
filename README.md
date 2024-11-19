@@ -86,7 +86,7 @@ PS: Podman claims that it is a drop-in replacement of Docker, so you can try to 
 alias docker=podman
 ```
 
-Keep in mind that I did not developed with Docker, so I do not guarantee that the above method works seamlessly.
+Keep in mind that I did not develop with Docker, so I do not guarantee that the above method works seamlessly.
 
 Other than this, if you want to play with the service itself, you need to have [Golang runtime](https://go.dev/dl/) installed on your host as well.
 

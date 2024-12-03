@@ -6,9 +6,6 @@ This PoC contains a simple configuration to see what it takes to run Jenkins loc
 
 <!--toc:start-->
 
-- [First, The "Why"](#first-the-why)
-- [Decisions, Decisions](#decisions-decisions)
-- [The "Goal"](#the-goal)
 - [Requirements](#requirements)
 - [Installation](#installation)
   - [One Command to Install Them All](#one-command-to-install-them-all)
@@ -24,48 +21,6 @@ This PoC contains a simple configuration to see what it takes to run Jenkins loc
 - [Issues](#issues)
 - [TODO](#todo)
 <!--toc:end-->
-
-## <a id='first-the-why'/> First, The "Why"
-
-Local testing, in any context, is done to receive a faster feedback about the thing we try to develop.
-It is also done to ensure that the things we develop actually behave like we want on remote servers.
-
-However, there are some issues with local testing, which comes up frequently as the phrase "But it works on my machine!":
-
-- Version mismatch between local and remote, causing unknown issues (mostly) during deployment and loss in velocity.
-- Non-reproducable remote configurations, which prevents local testing as a whole and causes developers to try alternative, non-reliable solutions.
-
-So, the goal of this project is to locally test the pipelines we use instead of doing trial and error on a remote pipeline.
-With this approach, we can _test_ the actual pipeline steps before deploying our service and fix any problems before hitting the actual servers.
-
-It also provides me a nice playground to work with containers and pipelines, so why not!
-
-## <a id='decisions-decisions'/> Decisions, Decisions
-
-When it comes to what to use for this PoC, my choices were quite straightforward:
-
-The service itself is really simple and the type of service (API, lambda, scheduler, etc.) doesn't matter that much. It just needs to have one test and a feature to be tested.
-So for the language, I choose **Golang**:
-
-- It's really fun to play, I don't know why.
-- It's pretty dead simple to get it up and running, you just have an entrypoint and a module state and that's it, which is perfect for this project.
-- It's tooling is amazing to work with.
-
-Regarding the CI tool, my weapon of choice is **Jenkins**:
-
-- It is by far the most commonly used tool in the industry, we can't deny it.
-- I already actively use Github Actions in where I work, so I wanted to try something else to add a little bit more challenge.
-
-## <a id='the-goal'/> The "Goal"
-
-The goal of this project is to create an environment where you can locally check the CI steps of a pipeline.
-Normally, a pipeline can be quite complex based on the actual need, so in order to make this PoC manageable I went with a couple of requirements:
-
-- It should be possible to containerize the entire build environment, to make it reproducable among developers.
-- It is forbidden to install any language runtime on the Jenkins agent other than Java. The agent should stay as clean as possible.
-- The pipeline should spin up ephemeral containers to execute the CI steps, and then remove them when there is no error.
-- If there is an error, it should be visible to the output and developers should be able to exec into the build container to troubleshoot the issue.
-- Any Docker image can be used by the actual pipeline.
 
 ## <a id='requirements'/> Requirements
 
